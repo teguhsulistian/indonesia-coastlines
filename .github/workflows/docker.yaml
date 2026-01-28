@@ -1,7 +1,6 @@
 name : Build Test Image and Push
 
 env:
-  # IMAGE_NAME: ${{ github.repository }}
   AWS_REGION: ap-southeast-3
   ECR_REPOSITORY: coastlines
 
