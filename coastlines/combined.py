@@ -771,6 +771,7 @@ def process_coastlines(
             config,
             query,
             include_nir=config.options.include_nir,
+            use_datacube=config.use_datacube,
         )
 
         log.info(f"Found {len(items)} items to load.")
