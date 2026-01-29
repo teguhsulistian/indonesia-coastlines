@@ -771,6 +771,7 @@ def process_coastlines(
             config,
             query,
             include_nir=config.options.include_nir,
+            use_datacube=config.use_datacube,
         )
 
         log.info(f"Found {len(items)} items to load.")
@@ -972,8 +973,8 @@ def cli(
             sys.exit(0)
 
     log.info("Checking configuration")
-    if config.virtual_product is not None:
-        raise NotImplementedError("Virtual products are not yet implemented")
+    if config.use_datacube is None:
+        raise ValueError("datacube config must be provided in config file")
     if config.stac is None:
         raise ValueError("STAC config must be provided in config file")
 
