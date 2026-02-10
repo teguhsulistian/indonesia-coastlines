@@ -1,5 +1,6 @@
+import os
 import sys
-from collections import Counter
+from collections import Counter, namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterable, Tuple, Union
@@ -8,19 +9,15 @@ import click
 import geopandas as gpd
 import xarray as xr
 from datacube import Datacube
+from datacube.api.query import solar_day
 from datacube.utils.dask import start_local_dask
 from dea_tools.spatial import hillshade, subpixel_contours
 from eo_tides.eo import pixel_tides
 from odc.algo import mask_cleanup, to_f32
-from shapely.geometry import box
 from odc.geo.geom import Geometry
 from odc.stac import configure_s3_access, load
 from pystac_client import Client
 from s3path import S3Path
-from datacube.api.query import solar_day
-
-
-from collections import namedtuple
 
 from coastlines.config import CoastlinesConfig
 
@@ -48,7 +45,6 @@ from coastlines.vector import (
     points_certainty,
     points_on_line,
 )
-
 
 # TODO: work out how to pass this in...
 STAC_CFG = {
@@ -293,10 +289,14 @@ def load_and_mask_data(
 
     if use_datacube:
         print("Loading with datacube")
-        ds, suninfo_by_day, meta = datacube_load(geopolygon=geopolygon, bands=bands, config=config)
+        ds, suninfo_by_day, meta = datacube_load(
+            geopolygon=geopolygon, bands=bands, config=config
+        )
     else:
         print("Loading with stac")
-        ds, suninfo_by_day, meta = stac_load(geopolygon=geopolygon, bands=bands, config=config)
+        ds, suninfo_by_day, meta = stac_load(
+            geopolygon=geopolygon, bands=bands, config=config
+        )
 
     # Get the nodata mask, just for the two main bands
     nodata_mask = (ds.green == 0) | (ds.swir16 == 0)
@@ -759,14 +759,13 @@ def process_coastlines(
     # Either use the MNDWI index or the combined index
     log.info(f"Using water index: {config.options.water_index}")
 
-
     # Loading data
     data, items = load_and_mask_data(
-            config,
-            geopolygon=Geometry(box(*bbox), crs="epsg:4326"),
-            include_nir=config.options.include_nir,
-            use_datacube=config.use_datacube,
-        )
+        config,
+        geopolygon=geometry,
+        include_nir=config.options.include_nir,
+        use_datacube=config.use_datacube,
+    )
 
     log.info(f"Found {len(items)} items to load.")
 
@@ -973,18 +972,25 @@ def cli(
     if config.aws.aws_unsigned and config.aws.aws_request_payer:
         raise ValueError("Cannot set both aws_unsigned and aws_request_payer to True")
 
-    log.info("Starting Dask")
-    # Set up Dask
-    _ = start_local_dask(n_workers=4, threads_per_worker=8, mem_safety_margin="2G")
-
     log.info("Configuring S3 access")
+
+    # Unset AWS_REGION, AWS_DEFAULT_REGION
+    os.environ.pop("AWS_REGION", None)
+    os.environ.pop("AWS_DEFAULT_REGION", None)
+
     # Do an opinionated configuration of S3 for data reading
     configure_s3_access(
         cloud_defaults=True,
         aws_unsigned=config.aws.aws_unsigned,
         requester_pays=config.aws.aws_request_payer,
-        region_name='us-west-2',
+        region_name="us-west-2",
     )
+
+    print(f"Environment variables: {os.environ}")
+
+    log.info("Starting Dask")
+    # Set up Dask
+    _ = start_local_dask(n_workers=4, threads_per_worker=8, mem_safety_margin="2G")
 
     try:
         log.info("Starting processing...")

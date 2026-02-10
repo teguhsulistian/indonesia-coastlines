@@ -6,7 +6,7 @@ metadata:
 spec:
   serviceAccountName: argo-workflows-executor
   entrypoint: coastlines-dag
-  parallelism: 50
+  parallelism: 10
   podGC:
     strategy: OnPodSuccess
     deleteDelayDuration: 120s
@@ -14,18 +14,23 @@ spec:
     annotations:
       karpenter.sh/do-not-disrupt: 'true'
   nodeSelector:
-    data-production: r4xlarge
+    data-production: r8xlarge
+  tolerations:
+    - key: data-production
+      operator: Equal
+      value: r8xlarge
+      effect: NoSchedule
   workflowMetadata:
     labels:
       app: indonesia-coastlines
   arguments:
     parameters:
       - name: image-tag
-        value: "0.1.1"
+        value: "0.0.1-20-g4ece659"
       - name: result-version
-        value: "0.0.1"
+        value: "0.0.3"
       - name: tiles-subset
-        value: '[\"200,221\",\"200,221\"]' # Can be [] for all tiles or '[\"200,221\",\"200,221\"]'
+        value: '[\"1955,62\",\"1956,62\",\"1957,62\",\"1958,62\",\"1959,62\",\"1965,62\",\"1966,62\",\"1952,63\",\"1953,63\",\"1954,63\",\"1955,63\",\"1956,63\",\"1959,63\",\"1960,63\",\"1961,63\",\"1962,63\",\"1963,63\",\"1964,63\",\"1965,63\",\"1966,63\",\"1952,64\",\"1953,64\",\"1954,64\",\"1964,64\",\"1965,64\"]' # Can be [] for all tiles or '[\"1965,62\",\"1953,69\"]'
       - name: config
         value: configs/indonesia_coastlines_config.yaml
       - name: overwrite
@@ -74,7 +79,7 @@ spec:
           - name: config
           - name: tiles-subset
       container:
-        image: ghcr.io/piksel-ina/indonesia-coastlines:{{workflow.parameters.image-tag}}
+        image: 686410905891.dkr.ecr.ap-southeast-3.amazonaws.com/coastlines:{{workflow.parameters.image-tag}}
         command: [bash, -c]
         args:
           - >-
@@ -93,11 +98,11 @@ spec:
           - name: config
           - name: result-version
           - name: overwrite
-      retryStrategy:
-        limit: 2
-        retryPolicy: Always
+      # retryStrategy:
+      #   limit: 2
+      #   retryPolicy: Always
       container:
-        image: ghcr.io/piksel-ina/indonesia-coastlines:{{workflow.parameters.image-tag}}
+        image: 686410905891.dkr.ecr.ap-southeast-3.amazonaws.com/coastlines:{{workflow.parameters.image-tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -117,6 +122,13 @@ spec:
             unzip -qq /tmp/tide_models.zip -d /tmp/tide_models_temp &&
             mv /tmp/tide_models_temp /tmp/tide_models
 
+            # # Clone the latest version of the code on the branch argo-workflows
+            # git clone https://github.com/piksel-ina/indonesia-coastlines.git /tmp/indonesia-coastlines
+            # cd /tmp/indonesia-coastlines
+            # git checkout argo-workflow
+
+            pip install .
+
             echo "Running coastlines"
             coastlines-combined \
               --config-path={{inputs.parameters.config}} \
@@ -124,6 +136,28 @@ spec:
               --tide-data-location="/tmp/tide_models/" \
               --output-version={{inputs.parameters.result-version}} \
               {{inputs.parameters.overwrite}}
+        env:
+          - name: ODC_DEFAULT_DB_HOSTNAME
+            value: pg-proxy-service.database.svc.cluster.local
+          - name: ODC_DEFAULT_DB_PORT
+            value: '6432'
+          - name: ODC_DEFAULT_DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: odc
+                key: username
+          - name: ODC_DEFAULT_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: odc
+                key: password
+          - name: ODC_DEFAULT_DB_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: odc
+                key: username
+          - name: ODC_DEFAULT_INDEX_DRIVER
+            value: postgis
 
     - name: merge-continental
       metadata:
@@ -134,7 +168,7 @@ spec:
           - name: config
           - name: result-version
       container:
-        image: ghcr.io/piksel-ina/indonesia-coastlines:{{workflow.parameters.image-tag}}
+        image: 686410905891.dkr.ecr.ap-southeast-3.amazonaws.com/coastlines:{{workflow.parameters.image-tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -146,6 +180,11 @@ spec:
         command: [bash, -c]
         args:
           - |
+            # # Clone the latest version of the code on the branch argo-workflows
+            # git clone https://github.com/piksel-ina/indonesia-coastlines.git /tmp/indonesia-coastlines
+            # cd /tmp/indonesia-coastlines
+            # git checkout argo-workflow
+
             coastlines-merge \
               --config-path={{inputs.parameters.config}} \
               --output-version={{inputs.parameters.result-version}}
