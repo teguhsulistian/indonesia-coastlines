@@ -6,7 +6,7 @@ metadata:
 spec:
   serviceAccountName: argo-workflows-executor
   entrypoint: coastlines-dag
-  parallelism: 10
+  parallelism: 16
   podGC:
     strategy: OnPodSuccess
     deleteDelayDuration: 120s
@@ -26,7 +26,7 @@ spec:
   arguments:
     parameters:
       - name: image-tag
-        value: "0.0.1-20-g4ece659"
+        value: "0.0.3"
       - name: result-version
         value: "0.0.3"
       - name: tiles-subset
@@ -122,10 +122,10 @@ spec:
             unzip -qq /tmp/tide_models.zip -d /tmp/tide_models_temp &&
             mv /tmp/tide_models_temp /tmp/tide_models
 
-            # # Clone the latest version of the code on the branch argo-workflows
-            # git clone https://github.com/piksel-ina/indonesia-coastlines.git /tmp/indonesia-coastlines
-            # cd /tmp/indonesia-coastlines
-            # git checkout argo-workflow
+            # Clone the latest version of the code on the branch argo-workflows
+            git clone https://github.com/piksel-ina/indonesia-coastlines.git /tmp/indonesia-coastlines
+            cd /tmp/indonesia-coastlines
+            git checkout update-workflow-testing
 
             pip install .
 
