@@ -6,7 +6,7 @@ metadata:
 spec:
   serviceAccountName: argo-workflows-executor
   entrypoint: coastlines-dag
-  parallelism: 120
+  parallelism: 16
   podGC:
     strategy: OnPodSuccess
     deleteDelayDuration: 120s
@@ -107,11 +107,11 @@ spec:
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: 64Gi
-            cpu: 8.0
+            memory: 32Gi
+            cpu: 4.0
           limits:
-            cpu: 12.0
-            memory: 80Gi
+            cpu: 8.0
+            memory: 40Gi
         command: [bash, -c]
         args:
           - |
@@ -166,11 +166,11 @@ spec:
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: 32Gi
-            cpu: 4.0
+            memory: 60Gi
+            cpu: 8.0
           limits:
             cpu: 8.0
-            memory: 40Gi
+            memory: 80Gi
         command: [bash, -c]
         args:
           - |
