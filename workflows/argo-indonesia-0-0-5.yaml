@@ -28,9 +28,9 @@ spec:
       - name: image-tag
         value: "0.0.3-12-g5e58708"
       - name: result-version
-        value: "0.0.5.jambi"
+        value: "0.0.5.sumsel"
       - name: tiles-subset
-        value: '[\"101,22\"]' # Can be [] for all tiles or '[\"1965,62\",\"1953,69\"]'
+        value: '[\"71,37\",\"72,37\"]' # Can be [] for all tiles or '[\"1965,62\",\"1953,69\"]'
       - name: config
         value: "https://raw.githubusercontent.com/teguhsulistian/indonesia-coastlines/refs/heads/main/configs/indonesia_coastlines_config_testing_ts.yaml"
       - name: overwrite
@@ -106,11 +106,11 @@ spec:
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: 32Gi
-            cpu: 4.0
-          limits:
-            cpu: 8.0
             memory: 40Gi
+            cpu: 8.0
+          limits:
+            cpu: 16.0
+            memory: 80Gi
         command: [bash, -c]
         args:
           - |
