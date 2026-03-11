@@ -12,7 +12,7 @@ stac:
   stac_api_url: "https://landsatlook.usgs.gov/stac-server"
   stac_collections:
     - "landsat-c2l2-sr"
-  lower_scene_limit: 250
+  lower_scene_limit: 100
   upper_scene_limit: 2000
 
 options:
@@ -34,7 +34,7 @@ options:
 
   load_buffer_distance: 1000  # in meters, ~1km; unit depends on the CRS
 
-  lower_scene_limit: 250
+  lower_scene_limit: 100
   upper_scene_limit: 2000
 
 aws:
